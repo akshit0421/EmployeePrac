@@ -42,24 +42,29 @@ public class DepartmentDAO {
         }
     }
 
+    // In DepartmentDAO
     public void deleteDepartment(int id) {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            tx = session.beginTransaction();
             Department dept = session.get(Department.class, id);
-            if (dept != null) {
-                session.remove(dept);
-                tx.commit();
-                System.out.println("✅ Department deleted successfully!");
-            } else {
-                System.out.println("❌ Department not found!");
-                if (tx != null) tx.rollback();
-            }
+            if (dept == null) return;
+
+            tx = session.beginTransaction();
+
+            // Delete all employees in this department first
+            session.createQuery("delete from Employee e where e.department.id = :deptId")
+                    .setParameter("deptId", id)
+                    .executeUpdate();
+
+            // Now delete department
+            session.remove(dept);
+            tx.commit();
         } catch (Exception e) {
             if (tx != null) tx.rollback();
             e.printStackTrace();
         }
     }
+
 
 
 }
