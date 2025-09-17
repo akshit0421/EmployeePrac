@@ -22,78 +22,162 @@ public class App {
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
-            System.out.println("\n===== Employee Management System =====");
-            System.out.println("1. Add Employee");
-            System.out.println("2. View All Employees");
-            System.out.println("3. Delete Employee");
-            System.out.println("4. Exit");
+            System.out.println("\n===== Main Menu =====");
+            System.out.println("1. Employee Management");
+            System.out.println("2. Department Management");
+            System.out.println("3. Exit");
             System.out.print("Enter choice: ");
+            int mainChoice = Integer.parseInt(scanner.nextLine());
 
-            int choice = -1;
-            try {
-                choice = Integer.parseInt(scanner.nextLine());
-            } catch (Exception e) {
-                System.out.println("Invalid input. Try again.");
-                continue;
-            }
-
-            switch (choice) {
-                case 1 -> {
-                    System.out.print("Enter name: ");
-                    String name = scanner.nextLine();
-
-                    List<Department> departments = deptDao.getAll();
-                    System.out.println("Choose Department:");
-                    for (Department d : departments) {
-                        System.out.println(d.getId() + ". " + d.getName());
-                    }
-                    System.out.print("Enter department id: ");
-                    int deptId = Integer.parseInt(scanner.nextLine());
-                    Department dept = deptDao.getById(deptId);
-
-                    if (dept == null) {
-                        System.out.println("❌ Invalid department!");
-                        break;
-                    }
-
-                    System.out.print("Enter salary: ");
-                    double salary = Double.parseDouble(scanner.nextLine());
-
-                    Employee emp = new Employee(name, salary, dept);
-                    dao.saveEmployee(emp);
-                    System.out.println("✅ Employee added successfully!");
-                }
-
-                case 2 -> {
-                    System.out.println("\n--- Employee List ---");
-
-                    var employees = dao.getAllEmployees();
-                    if (employees.isEmpty()) {
-                        System.out.println("No employees found.");
-                    } else {
-                        for (Employee e : employees) {
-                            System.out.println("+--------------------------------------+");
-                            System.out.println("| ID         : " + e.getId());
-                            System.out.println("| Name       : " + e.getName());
-                            System.out.println("| Department : " + e.getDepartment());
-                            System.out.println("| Salary     : " + e.getSalary());
-                            System.out.println("+--------------------------------------+\n");
-                        }
-                    }
-                }
-                case 3 -> {
-                    System.out.print("Enter Employee ID to delete: ");
-                    int id = Integer.parseInt(scanner.nextLine());
-                    dao.deleteEmployee(id);
-                    System.out.println("✅ Employee deleted (if existed).");
-                }
-                case 4 -> {
-                    System.out.println("👋 Exiting... Goodbye!");
-                    scanner.close();
-                    System.exit(0);
-                }
-                default -> System.out.println("Invalid choice. Please try again.");
+            switch (mainChoice) {
+                case 1 -> employeeMenu(scanner, dao, deptDao);
+                case 2 -> departmentMenu(scanner, deptDao);
+                case 3 -> System.exit(0);
+                default -> System.out.println("❌ Invalid choice!");
             }
         }
     }
+
+    private static void departmentMenu(Scanner scanner, DepartmentDAO departmentDAO) {
+        while (true) {
+            System.out.println("\n===== Department Management =====");
+            System.out.println("1. View Departments");
+            System.out.println("2. Add Department");
+            System.out.println("3. Delete Department");
+            System.out.println("4. Back to Main Menu");
+            System.out.print("Enter choice: ");
+            int choice = Integer.parseInt(scanner.nextLine());
+
+            switch (choice) {
+                case 1 -> {
+                    List<Department> departments = departmentDAO.getAll();
+                    if (departments.isEmpty()) {
+                        System.out.println("No departments found.");
+                    } else {
+                        departments.forEach(d -> System.out.println(d.getId() + ". " + d.getName()));
+                    }
+                }
+                case 2 -> {
+                    System.out.print("Enter new department name: ");
+                    String name = scanner.nextLine();
+                    if (!name.isBlank()) {
+                        departmentDAO.createDepartment(name);
+                    } else {
+                        System.out.println("❌ Invalid name.");
+                    }
+                }
+                case 3 -> {
+                    System.out.print("Enter Department ID to delete: ");
+                    int id = Integer.parseInt(scanner.nextLine());
+                    departmentDAO.deleteDepartment(id);
+                }
+                case 4 -> {
+                    return; // Back to main menu
+                }
+                default -> System.out.println("❌ Invalid choice!");
+            }
+        }
+    }
+
+
+    private static void employeeMenu(Scanner scanner, EmployeeDAO employeeDAO, DepartmentDAO departmentDAO) {
+        while (true) {
+            System.out.println("\n===== Employee Management =====");
+            System.out.println("1. Add Employee");
+            System.out.println("2. View All Employees");
+            System.out.println("3. Update Employee");
+            System.out.println("4. Delete Employee");
+            System.out.println("5. Back to Main Menu");
+            System.out.print("Enter choice: ");
+            int choice = Integer.parseInt(scanner.nextLine());
+
+            switch (choice) {
+                case 1 -> {
+                    // Add Employee
+                    System.out.print("Enter Employee Name: ");
+                    String name = scanner.nextLine();
+
+                    System.out.print("Enter Salary: ");
+                    double salary = Double.parseDouble(scanner.nextLine());
+
+                    // Show departments
+                    List<Department> departments = departmentDAO.getAll();
+                    if (departments.isEmpty()) {
+                        System.out.println("No departments found. Please add a department first.");
+                        break;
+                    }
+                    System.out.println("Available Departments:");
+                    departments.forEach(d -> System.out.println(d.getId() + ". " + d.getName()));
+                    System.out.print("Enter Department ID: ");
+                    int deptId = Integer.parseInt(scanner.nextLine());
+                    Department dept = departmentDAO.getById(deptId);
+
+                    Employee emp = new Employee();
+                    emp.setName(name);
+                    emp.setSalary(salary);
+                    emp.setDepartment(dept);
+
+                    employeeDAO.saveEmployee(emp);
+                }
+
+                case 2 -> {
+                    // View Employees
+                    List<Employee> employees = employeeDAO.getAllEmployees();
+                    if (employees.isEmpty()) {
+                        System.out.println("No employees found.");
+                    } else {
+                        System.out.println("\nID | Name | Salary | Department");
+                        employees.forEach(e ->
+                                System.out.println(e.getId() + " | " + e.getName() + " | " + e.getSalary() + " | " +
+                                        (e.getDepartment() != null ? e.getDepartment().getName() : "None"))
+                        );
+                    }
+                }
+
+                case 3 -> {
+                    // Update Employee
+                    System.out.print("Enter Employee ID to update: ");
+                    int id = Integer.parseInt(scanner.nextLine());
+
+                    System.out.print("Enter new name (or leave blank to keep): ");
+                    String newName = scanner.nextLine();
+                    if (newName.isBlank()) newName = null;
+
+                    System.out.print("Enter new salary (or leave blank to keep): ");
+                    String salaryInput = scanner.nextLine();
+                    Double newSalary = salaryInput.isBlank() ? null : Double.parseDouble(salaryInput);
+
+                    // Show departments
+                    List<Department> departments = departmentDAO.getAll();
+                    if (departments.isEmpty()) {
+                        System.out.println("No departments found. Please add a department first.");
+                        break;
+                    }
+                    System.out.println("Available Departments:");
+                    departments.forEach(d -> System.out.println(d.getId() + ". " + d.getName()));
+                    System.out.print("Enter new Department ID (or leave blank to keep): ");
+                    String deptInput = scanner.nextLine();
+                    Department newDept = deptInput.isBlank() ? null : departmentDAO.getById(Integer.parseInt(deptInput));
+
+                    // Call DAO update method
+                    employeeDAO.updateEmployee(id, newName, newSalary, newDept);
+                }
+
+                case 4 -> {
+                    // Delete Employee
+                    System.out.print("Enter Employee ID to delete: ");
+                    int id = Integer.parseInt(scanner.nextLine());
+                    employeeDAO.deleteEmployee(id);
+                }
+
+                case 5 -> {
+                    return; // Back to Main Menu
+                }
+
+                default -> System.out.println("❌ Invalid choice!");
+            }
+        }
+    }
+
+
 }

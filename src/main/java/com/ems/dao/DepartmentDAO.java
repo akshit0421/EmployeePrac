@@ -18,7 +18,7 @@ public class DepartmentDAO {
 
     public List<Department> getAll() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("from Department", Department.class).list();
+            return session.createQuery("from Department d order by d.id", Department.class).list();
         }
     }
 
@@ -27,4 +27,39 @@ public class DepartmentDAO {
             return session.get(Department.class, id);
         }
     }
+
+    public void createDepartment(String name) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            Department dept = new Department(name);
+            session.persist(dept);
+            tx.commit();
+            System.out.println("✅ Department '" + name + "' created with ID: " + dept.getId());
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteDepartment(int id) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            Department dept = session.get(Department.class, id);
+            if (dept != null) {
+                session.remove(dept);
+                tx.commit();
+                System.out.println("✅ Department deleted successfully!");
+            } else {
+                System.out.println("❌ Department not found!");
+                if (tx != null) tx.rollback();
+            }
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+        }
+    }
+
+
 }
