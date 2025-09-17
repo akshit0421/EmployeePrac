@@ -15,7 +15,14 @@ public class EmployeeDAO {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             tx = session.beginTransaction();
+
             session.persist(employee);
+
+            // Increment department's employee count
+            Department dept = employee.getDepartment();
+            dept.setEmployeeCount(dept.getEmployeeCount() + 1);
+            session.merge(dept);
+
             tx.commit();
         } catch (Exception e) {
             if (tx != null) tx.rollback();
@@ -72,7 +79,15 @@ public class EmployeeDAO {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             tx = session.beginTransaction();
             Employee emp = session.get(Employee.class, id);
-            if (emp != null) session.remove(emp);
+            if (emp != null) {
+                Department dept = emp.getDepartment();
+                session.remove(emp);
+
+                // Decrement department's employee count
+                dept.setEmployeeCount(dept.getEmployeeCount() - 1);
+                session.merge(dept);
+            }
+
             tx.commit();
         } catch (Exception e) {
             if (tx != null) tx.rollback();

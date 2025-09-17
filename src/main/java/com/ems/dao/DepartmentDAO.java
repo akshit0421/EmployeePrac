@@ -65,6 +65,20 @@ public class DepartmentDAO {
         }
     }
 
+    public void printDepartments() {
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            List<Department> departments = session.createQuery("from Department", Department.class).list();
+
+            System.out.println("\nID | Department Name | Employee Count");
+            System.out.println("-------------------------------------");
+
+            for (Department dept : departments) {
+                // employeeCount is calculated dynamically
+                System.out.println(dept.getId() + " | " + dept.getName() + " | " + dept.getEmployeeCount());
+            }
+        }
+    }
+
 
 
 }

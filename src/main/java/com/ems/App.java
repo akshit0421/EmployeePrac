@@ -44,7 +44,8 @@ public class App {
             System.out.println("1. View Departments");
             System.out.println("2. Add Department");
             System.out.println("3. Delete Department");
-            System.out.println("4. Back to Main Menu");
+            System.out.println("4. Employee Count In Department");
+            System.out.println("5. Back to Main Menu");
             System.out.print("Enter choice: ");
             int choice = Integer.parseInt(scanner.nextLine());
 
@@ -71,7 +72,8 @@ public class App {
                     int id = Integer.parseInt(scanner.nextLine());
                     departmentDAO.deleteDepartment(id);
                 }
-                case 4 -> {
+                case 4 -> departmentDAO.printDepartments();
+                case 5 -> {
                     return; // Back to main menu
                 }
                 default -> System.out.println("❌ Invalid choice!");
