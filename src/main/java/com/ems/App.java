@@ -1,10 +1,12 @@
 package com.ems;
 
 import com.ems.dao.EmployeeDAO;
+import com.ems.dao.ProjectDAO;
 import com.ems.entity.Employee;
 
 import com.ems.dao.DepartmentDAO;
 import com.ems.entity.Department;
+import com.ems.entity.Project;
 
 import java.util.List;
 import java.util.Scanner;
@@ -25,14 +27,16 @@ public class App {
             System.out.println("\n===== Main Menu =====");
             System.out.println("1. Employee Management");
             System.out.println("2. Department Management");
-            System.out.println("3. Exit");
+            System.out.println("3. Project Management");
+            System.out.println("4. Exit");
             System.out.print("Enter choice: ");
             int mainChoice = Integer.parseInt(scanner.nextLine());
 
             switch (mainChoice) {
                 case 1 -> employeeMenu(scanner, dao, deptDao);
                 case 2 -> departmentMenu(scanner, deptDao);
-                case 3 -> System.exit(0);
+                case 3 -> projectMenu(scanner, new ProjectDAO());
+                case 4 -> System.exit(0);
                 default -> System.out.println("❌ Invalid choice!");
             }
         }
@@ -181,5 +185,99 @@ public class App {
         }
     }
 
+    private static void projectMenu(Scanner scanner, ProjectDAO projectDAO) {
+        EmployeeDAO employeeDAO = new EmployeeDAO();
+
+        while (true) {
+            System.out.println("\n===== Project Management =====");
+            System.out.println("1. View Projects");
+            System.out.println("2. Add Project");
+            System.out.println("3. Delete Project");
+            System.out.println("4. Assign Project to Employee");
+            System.out.println("5. View Employees with Projects");
+            System.out.println("6. Back to Main Menu");
+            System.out.print("Enter choice: ");
+            int choice = Integer.parseInt(scanner.nextLine());
+
+            switch (choice) {
+                case 1 -> {
+                    var projects = projectDAO.getAll();
+                    if (projects.isEmpty()) {
+                        System.out.println("No projects found.");
+                    } else {
+                        projects.forEach(p -> System.out.println(p.getId() + ". " + p.getName()));
+                    }
+                }
+                case 2 -> {
+                    System.out.print("Enter new project name: ");
+                    String name = scanner.nextLine();
+                    if (!name.isBlank()) {
+                        projectDAO.saveProject(new Project(name));
+                    } else {
+                        System.out.println("❌ Invalid name.");
+                    }
+                }
+                case 3 -> {
+                    System.out.print("Enter Project ID to delete: ");
+                    int id = Integer.parseInt(scanner.nextLine());
+                    projectDAO.deleteProject(id);
+                }
+                case 4 -> {
+                    // Assign project to employee
+                    var employees = employeeDAO.getAllEmployees();
+                    if (employees.isEmpty()) {
+                        System.out.println("No employees available. Add employees first.");
+                        break;
+                    }
+                    var projects = projectDAO.getAll();
+                    if (projects.isEmpty()) {
+                        System.out.println("No projects available. Add projects first.");
+                        break;
+                    }
+
+                    System.out.println("Available Employees:");
+                    employees.forEach(e -> System.out.println(e.getId() + ". " + e.getName()));
+
+                    System.out.print("Enter Employee ID: ");
+                    int empId = Integer.parseInt(scanner.nextLine());
+                    Employee emp = employeeDAO.getEmployeeById(empId);
+
+                    System.out.println("Available Projects:");
+                    projects.forEach(p -> System.out.println(p.getId() + ". " + p.getName()));
+
+                    System.out.print("Enter Project ID: ");
+                    int projId = Integer.parseInt(scanner.nextLine());
+                    Project project = projectDAO.getById(projId);
+
+                    if (emp != null && project != null) {
+                        employeeDAO.assignProject(empId, projId);
+                        System.out.println("✅ Project assigned successfully.");
+                    } else {
+                        System.out.println("❌ Invalid employee or project.");
+                    }
+                }
+                case 5 -> {
+                    var employees = employeeDAO.getAllEmployees();
+                    if (employees.isEmpty()) {
+                        System.out.println("No employees found.");
+                    } else {
+                        employees.forEach(e -> {
+                            System.out.print("Employee: " + e.getName() + " → Projects: ");
+                            if (e.getProjects().isEmpty()) {
+                                System.out.println("None");
+                            } else {
+                                e.getProjects().forEach(p -> System.out.print(p.getName() + " "));
+                                System.out.println();
+                            }
+                        });
+                    }
+                }
+                case 6 -> {
+                    return; // Back to main menu
+                }
+                default -> System.out.println("❌ Invalid choice!");
+            }
+        }
+    }
 
 }

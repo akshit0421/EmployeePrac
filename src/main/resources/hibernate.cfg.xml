@@ -19,8 +19,8 @@
         <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
 
         <!-- Show SQL in console -->
-        <property name="hibernate.show_sql">true</property>
-        <property name="hibernate.format_sql">true</property>
+        <property name="hibernate.show_sql">false</property>
+        <property name="hibernate.format_sql">false</property>
 
         <!-- Automatically create tables -->
         <property name="hibernate.hbm2ddl.auto">create</property>
@@ -28,6 +28,7 @@
         <!-- Mapping entity classes -->
         <mapping class="com.ems.entity.Employee"/>
         <mapping class="com.ems.entity.Department"/>
+        <mapping class="com.ems.entity.Project"/>
 
     </session-factory>
 </hibernate-configuration>

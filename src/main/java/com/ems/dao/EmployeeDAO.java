@@ -2,6 +2,7 @@ package com.ems.dao;
 
 import com.ems.entity.Employee;
 import com.ems.entity.Department;
+import com.ems.entity.Project;
 import com.ems.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -30,17 +31,30 @@ public class EmployeeDAO {
         }
     }
 
-    // Fetch all employees
+    // Fetch all employees with their projects (JOIN FETCH)
     public List<Employee> getAllEmployees() {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.createQuery("from Employee", Employee.class).list();
+            return session.createQuery(
+                    "SELECT DISTINCT e FROM Employee e " +
+                            "LEFT JOIN FETCH e.projects " +
+                            "LEFT JOIN FETCH e.department",
+                    Employee.class
+            ).list();
         }
     }
 
-    // Fetch by ID
+    // Fetch by ID with projects (JOIN FETCH)
     public Employee getEmployeeById(int id) {
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            return session.get(Employee.class, id);
+            return session.createQuery(
+                            "SELECT e FROM Employee e " +
+                                    "LEFT JOIN FETCH e.projects " +
+                                    "LEFT JOIN FETCH e.department " +
+                                    "WHERE e.id = :id",
+                            Employee.class
+                    )
+                    .setParameter("id", id)
+                    .uniqueResult();
         }
     }
 
@@ -48,8 +62,7 @@ public class EmployeeDAO {
     public void updateEmployee(int id, String newName, Double newSalary, Department newDept) {
         Transaction tx = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            // Step 1: fetch the employee using existing method
-            Employee emp = getEmployeeById(id); // uses your DAO's getEmployeeById
+            Employee emp = getEmployeeById(id); // already fetches projects + dept
             if (emp == null) {
                 System.out.println("❌ Employee not found!");
                 return;
@@ -57,12 +70,10 @@ public class EmployeeDAO {
 
             tx = session.beginTransaction();
 
-            // Step 2: update fields if provided
             if (newName != null && !newName.isBlank()) emp.setName(newName);
             if (newSalary != null) emp.setSalary(newSalary);
             if (newDept != null) emp.setDepartment(newDept);
 
-            // Step 3: save changes
             session.merge(emp);
             tx.commit();
             System.out.println("✅ Employee updated successfully!");
@@ -71,7 +82,6 @@ public class EmployeeDAO {
             e.printStackTrace();
         }
     }
-
 
     // Delete employee
     public void deleteEmployee(int id) {
@@ -83,9 +93,34 @@ public class EmployeeDAO {
                 Department dept = emp.getDepartment();
                 session.remove(emp);
 
-                // Decrement department's employee count
-                dept.setEmployeeCount(dept.getEmployeeCount() - 1);
-                session.merge(dept);
+                if (dept != null) {
+                    dept.setEmployeeCount(dept.getEmployeeCount() - 1);
+                    session.merge(dept);
+                }
+            }
+            tx.commit();
+        } catch (Exception e) {
+            if (tx != null) tx.rollback();
+            e.printStackTrace();
+        }
+    }
+
+    // Assign project to employee
+    public void assignProject(int empId, int projId) {
+        Transaction tx = null;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            Employee emp = session.get(Employee.class, empId);
+            Project project = session.get(Project.class, projId);
+
+            if (emp != null && project != null) {
+                emp.getProjects().add(project);
+                project.getEmployees().add(emp); // keep both sides in sync
+                session.merge(emp);
+                session.merge(project);
+                System.out.println("✅ Project assigned to employee successfully!");
+            } else {
+                System.out.println("❌ Employee or Project not found!");
             }
 
             tx.commit();
