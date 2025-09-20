@@ -1,36 +1,46 @@
 package com.ems.dao;
 
 import com.ems.entity.Department;
-import com.ems.util.HibernateUtil;
 import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.springframework.stereotype.Repository;
+
 import java.util.List;
 
+@Repository
 public class DepartmentDAO {
 
+    private final SessionFactory sessionFactory;
+
+    // Spring will automatically inject the SessionFactory bean
+    public DepartmentDAO(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
+    }
+
     public void save(Department dept) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = sessionFactory.openSession()) {
             Transaction tx = session.beginTransaction();
-            session.saveOrUpdate(dept);
+            session.persist(dept);
             tx.commit();
         }
     }
 
     public List<Department> getAll() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = sessionFactory.openSession()) {
             return session.createQuery("from Department d order by d.id", Department.class).list();
         }
     }
 
     public Department getById(int id) {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = sessionFactory.openSession()) {
             return session.get(Department.class, id);
         }
     }
 
     public void createDepartment(String name) {
         Transaction tx = null;
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = sessionFactory.openSession()) {
             tx = session.beginTransaction();
             Department dept = new Department(name);
             session.persist(dept);
@@ -42,10 +52,9 @@ public class DepartmentDAO {
         }
     }
 
-    // In DepartmentDAO
     public void deleteDepartment(int id) {
         Transaction tx = null;
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+        try (Session session = sessionFactory.openSession()) {
             Department dept = session.get(Department.class, id);
             if (dept == null) return;
 
@@ -66,19 +75,18 @@ public class DepartmentDAO {
     }
 
     public void printDepartments() {
-        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            List<Department> departments = session.createQuery("from Department", Department.class).list();
+        try (Session session = sessionFactory.openSession()) {
+            List<Department> departments =
+                    session.createQuery("from Department", Department.class).list();
 
             System.out.println("\nID | Department Name | Employee Count");
             System.out.println("-------------------------------------");
 
             for (Department dept : departments) {
-                // employeeCount is calculated dynamically
-                System.out.println(dept.getId() + " | " + dept.getName() + " | " + dept.getEmployeeCount());
+                System.out.println(dept.getId() + " | "
+                        + dept.getName() + " | "
+                        + dept.getEmployeeCount());
             }
         }
     }
-
-
-
 }
